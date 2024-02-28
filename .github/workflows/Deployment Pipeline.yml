@@ -1,48 +1,26 @@
 name: Deployment Pipeline
 
 on:
+  workflow_run:
+    workflows: CI build pipeline
+    branches: [master,develop]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: GitHubDemoVM
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.0.x'
-          include-prerelease: true
-
-      - name: Build with dotnet
-        working-directory: ./dotnet
-        run: dotnet build --configuration Release
-
-      - name: dotnet publish
-        working-directory: ./dotnet
-        run: dotnet publish -c Release -o ./myapp
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
-        with:
-          name: .net-app
-          path: ./dotnet/myapp
-
   deploy:
     runs-on: GitHubDemoVM
-    needs: build
-      
+    
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
+      - name: Download build artifact
+        uses: dawidd6/action-download-artifact@v3
         with:
-          name: .net-app
-          path: mycode
-
-      - name: Deploy to VM path
+          name: my-artifacts
+          workflow: CI Build Pipeline.yml
+          path: build_artifacts
+          
+      - name: Deploy to GitHubActionDemo site
         run: |
           iisreset /stop
-          xcopy /s /y .\mycode\* C:\inetpub\wwwroot\GitHubActionDemo
+          xcopy /s /y .\build_artifacts\* C:\inetpub\wwwroot\GitHubActionDemo
           iisreset /start
