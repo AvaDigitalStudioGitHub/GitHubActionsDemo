@@ -1,4 +1,4 @@
-name: Build and deploy to GitHubDemoVM
+name: Deployment Pipeline
 
 on:
   workflow_dispatch:
